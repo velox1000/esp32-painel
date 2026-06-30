@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel ESP32 — Unidade 5</title>
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --accent:   #00e5a0;
+      --accent2:  #3b82f6;
+      --danger:   #ef4444;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --radius:   12px;
+      --mono:     'Courier New', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e2535;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      letter-spacing: .04em;
+    }
+    .chip .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .3; }
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    /* ── Config bar ── */
+    .config-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 540px;
+      margin: 0 auto 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+    .config-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .config-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+    }
+    .config-bar button {
+      background: var(--accent);
+      color: #0f1117;
+      border: none;
+      border-radius: 7px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .config-bar button:hover { filter: brightness(1.1); }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      max-width: 860px;
+      margin: 0 auto 2rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-label svg { opacity: .6; }
+
+    /* ── Status badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .badge.on  { background: rgba(0,229,160,.12); color: var(--accent); border: 1px solid rgba(0,229,160,.25); }
+    .badge.off { background: rgba(107,114,128,.12); color: var(--muted); border: 1px solid rgba(107,114,128,.25); }
+    .badge .b-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    /* ── Big value ── */
+    .big-value {
+      font-size: 2.8rem;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--accent2);
+      letter-spacing: -.03em;
+      line-height: 1;
+    }
+    .big-unit {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Progress bar ── */
+    .prog-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+
+    /* ── LED buttons ── */
+    .led-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .btn-led {
+      flex: 1;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      padding: 10px 0;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .1s, filter .15s;
+      letter-spacing: .02em;
+    }
+    .btn-led:active { transform: scale(.97); }
+    .btn-on  { background: rgba(0,229,160,.15); color: var(--accent);  border-color: rgba(0,229,160,.3); }
+    .btn-off { background: rgba(239,68,68,.12); color: var(--danger);  border-color: rgba(239,68,68,.25); }
+    .btn-on:hover  { filter: brightness(1.2); }
+    .btn-off:hover { filter: brightness(1.2); }
+
+    /* LED visual indicator */
+    .led-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.2rem;
+    }
+    .led-bulb {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 2px solid var(--border);
+      transition: background .3s, box-shadow .3s;
+    }
+    .led-bulb.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 14px var(--accent), 0 0 28px rgba(0,229,160,.4);
+    }
+    .led-state-text {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .led-state-text strong { color: var(--text); }
+
+    /* ── Log ── */
+    .log-area {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .log-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .log-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      height: 130px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .log-box .log-line { line-height: 1.8; }
+    .log-box .log-line span { color: var(--accent); margin-right: 6px; }
+
+    /* ── Auto-refresh toggle ── */
+    .refresh-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 860px;
+      margin: 0 auto 1rem;
+      justify-content: flex-end;
+    }
+    .refresh-label { font-size: 12px; color: var(--muted); }
+    .toggle {
+      position: relative;
+      width: 38px; height: 22px;
+      cursor: pointer;
+    }
+    .toggle input { display: none; }
+    .toggle-track {
+      width: 100%; height: 100%;
+      background: var(--border);
+      border-radius: 99px;
+      transition: background .2s;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left .2s;
+    }
+    .toggle input:checked ~ .toggle-thumb { left: 19px; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="chip">
+    <span class="dot"></span>
+    ESP32 · Servidor Web Local
+  </div>
+  <h1>Painel de <span>Controle</span></h1>
+  <p class="subtitle">Unidade 5 — IoT com ESP32 · Monitoramento e controle via navegador</p>
+</header>
+
+<!-- Config bar -->
+<div class="config-bar">
+  <label>URL / IP:</label>
+  <input type="text" id="esp-ip" value="192.168.1.100" placeholder="xxxx.ngrok-free.app ou 192.168.1.100" />
+  <button onclick="salvarIP()">Salvar</button>
+</div>
+
+<!-- Auto-refresh toggle -->
+<div class="refresh-row">
+  <span class="refresh-label">Atualização automática (2 s)</span>
+  <label class="toggle">
+    <input type="checkbox" id="auto-toggle" checked onchange="toggleAuto(this)" />
+    <div class="toggle-track"></div>
+    <div class="toggle-thumb"></div>
+  </label>
+</div>
+
+<!-- Cards -->
+<div class="grid">
+
+  <!-- Botão físico -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+      Botão físico (GPIO)
+    </div>
+    <div id="btn-badge" class="badge off">
+      <span class="b-dot"></span>
+      <span id="btn-txt">Solto</span>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:10px;">
+      Leitura digital da entrada GPIO — detecta se o botão está pressionado ou solto.
+    </p>
+  </div>
+
+  <!-- Potenciômetro -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+      Potenciômetro (ADC)
+    </div>
+    <div class="big-value" id="adc-val">0</div>
+    <div class="big-unit">de 4095 &nbsp;·&nbsp; <span id="adc-pct">0%</span></div>
+    <div class="prog-track">
+      <div class="prog-fill" id="adc-bar" style="width:0%"></div>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:10px;">
+      Leitura analógica 12-bit (0–4095) via ADC do ESP32.
+    </p>
+  </div>
+
+  <!-- LED -->
+  <div class="card">
+    <div class="card-label">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18h6M12 2a7 7 0 0 1 5 11.9V17H7v-3.1A7 7 0 0 1 12 2z"/></svg>
+      LED (saída digital)
+    </div>
+    <div class="led-indicator">
+      <div class="led-bulb" id="led-bulb"></div>
+      <div class="led-state-text">Estado: <strong id="led-state-txt">Desligado</strong></div>
+    </div>
+    <div class="led-row">
+      <button class="btn-led btn-on"  onclick="comandoLED('ON')">&#9679; Ligar</button>
+      <button class="btn-led btn-off" onclick="comandoLED('OFF')">&#9679; Desligar</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Log -->
+<div class="log-area">
+  <div class="log-title">Log de eventos</div>
+  <div class="log-box" id="log-box"></div>
+</div>
+
+<footer>
+  Requisições GET · HTTP/1.1 · Porta 80 &nbsp;|&nbsp; Disciplina de IoT
+</footer>
+
+<script>
+  // Monta a baseURL corretamente aceitando IP puro ou URL completa (ngrok)
+  function montarURL(valor) {
+    const v = valor.trim();
+    if (v.startsWith('http://') || v.startsWith('https://')) {
+      return v.replace(/\/$/, ''); // remove barra final se houver
+    }
+    return 'http://' + v;
+  }
+
+  let baseURL = montarURL(document.getElementById('esp-ip').value);
+  let autoTimer = null;
+  let ledOn = false;
+
+  // Cabeçalhos para todas as requisições
+  // ngrok-skip-browser-warning evita a página de aviso do ngrok
+  const HEADERS = {
+    'ngrok-skip-browser-warning': 'true'
+  };
+
+  function salvarIP() {
+    baseURL = montarURL(document.getElementById('esp-ip').value);
+    log('URL atualizada: ' + baseURL);
+    buscarStatus();
+  }
+
+  /* ── LOG ── */
+  function log(msg) {
+    const box = document.getElementById('log-box');
+    const now = new Date().toLocaleTimeString('pt-BR');
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span>${now}</span>${msg}`;
+    box.prepend(line);
+    // manter máx 40 linhas
+    while (box.children.length > 40) box.removeChild(box.lastChild);
+  }
+
+  /* ── ATUALIZAR DADOS ── */
+  async function buscarStatus() {
+    try {
+      const res = await fetch(baseURL + '/status', {
+        headers: HEADERS,
+        signal: AbortSignal.timeout(3000)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      atualizarBotao(data.button);
+      atualizarADC(data.adc);
+      atualizarLED(data.led);
+      log('Status recebido — botão:' + data.button + ' adc:' + data.adc + ' led:' + data.led);
+    } catch (e) {
+      log('Erro ao buscar status: ' + e.message);
+    }
+  }
+
+  /* ── COMANDO LED ── */
+  async function comandoLED(cmd) {
+    log('Enviando comando: /LED=' + cmd);
+    try {
+      const res = await fetch(baseURL + '/LED=' + cmd, {
+        headers: HEADERS,
+        signal: AbortSignal.timeout(3000)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      log('LED ' + cmd + ' confirmado pelo ESP32');
+      atualizarLED(cmd === 'ON' ? 1 : 0);
+    } catch (e) {
+      log('Erro no comando LED: ' + e.message);
+    }
+  }
+
+  /* ── ATUALIZAR UI ── */
+  function atualizarBotao(val) {
+    const badge = document.getElementById('btn-badge');
+    const txt   = document.getElementById('btn-txt');
+    if (val === 1 || val === '1') {
+      badge.className = 'badge on';
+      txt.textContent = 'Pressionado';
+    } else {
+      badge.className = 'badge off';
+      txt.textContent = 'Solto';
+    }
+  }
+
+  function atualizarADC(val) {
+    const v = parseInt(val) || 0;
+    const pct = Math.round((v / 4095) * 100);
+    document.getElementById('adc-val').textContent = v;
+    document.getElementById('adc-pct').textContent = pct + '%';
+    document.getElementById('adc-bar').style.width = pct + '%';
+  }
+
+  function atualizarLED(val) {
+    const on = (val === 1 || val === '1' || val === 'ON');
+    ledOn = on;
+    document.getElementById('led-bulb').className = 'led-bulb' + (on ? ' on' : '');
+    document.getElementById('led-state-txt').textContent = on ? 'Ligado' : 'Desligado';
+  }
+
+  /* ── AUTO-REFRESH ── */
+  function toggleAuto(el) {
+    if (el.checked) {
+      autoTimer = setInterval(buscarStatus, 2000);
+      log('Atualização automática ativada (2 s)');
+    } else {
+      clearInterval(autoTimer);
+      log('Atualização automática pausada');
+    }
+  }
+
+  /* ── INIT ── */
+  log('Painel iniciado — cole a URL do ngrok ou IP do ESP32 acima');
+  autoTimer = setInterval(buscarStatus, 2000);
+</script>
+
+</body>
+</html>
