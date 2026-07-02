@@ -433,7 +433,7 @@
     try {
       const res = await fetch(baseURL + '/status', {
         headers: HEADERS,
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(8000)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
@@ -452,7 +452,7 @@
     try {
       const res = await fetch(baseURL + '/LED=' + cmd, {
         headers: HEADERS,
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(8000)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       log('LED ' + cmd + ' confirmado pelo ESP32');
@@ -493,7 +493,7 @@
   /* ── AUTO-REFRESH ── */
   function toggleAuto(el) {
     if (el.checked) {
-      autoTimer = setInterval(buscarStatus, 2000);
+      autoTimer = setInterval(buscarStatus, 5000);
       log('Atualização automática ativada (2 s)');
     } else {
       clearInterval(autoTimer);
@@ -503,7 +503,7 @@
 
   /* ── INIT ── */
   log('Painel iniciado — cole a URL do ngrok ou IP do ESP32 acima');
-  autoTimer = setInterval(buscarStatus, 2000);
+  autoTimer = setInterval(buscarStatus, 5000);
 </script>
 
 </body>
